@@ -1,4 +1,6 @@
 import express from 'express'
+import path from 'path'
+import fs from 'fs'
 import React from 'react'
 import { renderToString } from 'react-dom/server'
 import { StaticRouter, matchPath, Route, Switch } from 'react-router-dom'
@@ -15,7 +17,19 @@ app.use(express.static('public'))
 
 app.use(proxy('/api', { target: 'http://localhost:9090' }))
 
+function csrRender(res) {
+  const file = path.resolve(process.cwd(), 'public/index.csr.html')
+  const html = fs.readFileSync(file, 'utf-8')
+  return res.send(html)
+}
+
 app.get('*', (req, res) => {
+  if (req.query._mode == 'csr') {
+    return csrRender(res)
+  }
+
+
+
   const promises = [];
   routes.some(route => {
     const match = matchPath(req.path, route)
@@ -29,7 +43,9 @@ app.get('*', (req, res) => {
 
   Promise.all(promises.map(p => p.catch(e => null)))
     .then(() => {
-      const context = {}
+      const context = {
+        css: []
+      }
       const content = renderToString(<Provider store={store}>
         <StaticRouter location={req.url} context={context}>
           <Header></Header>
@@ -46,11 +62,16 @@ app.get('*', (req, res) => {
       if (context.action == "REPLACE")
         res.redirect(context.url)
 
+      const css = context.css.join('\n')
+
       res.send(
         `
       <html>
           <head>
               <meta charset="utf-8">
+              <style>
+              ${css}
+              </style>
           </head>
           <body>
               <div id="root">${content}</div>

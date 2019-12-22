@@ -1,11 +1,13 @@
 import React from 'react'
+import withStyle from '../withStyle'
+import styles from './About.css'
 
 function About(props) {
     return (
-        <div>
-            <h1>About</h1>
+        <div className={styles.container}>
+            <h1 className={styles.title}>About</h1>
         </div>
     )
 }
 
-export default About
+export default withStyle(About, styles)
