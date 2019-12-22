@@ -5,6 +5,7 @@ export default () => {
   return <div>
     <Link to="/">Home</Link> |
     <Link to="/user">User</Link> |
-    <Link to="/about">About</Link>
+    <Link to="/about">About</Link> |
+    <Link to="/nothing">Not Found</Link>
   </div>
 }

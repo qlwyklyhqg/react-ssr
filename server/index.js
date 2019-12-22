@@ -1,12 +1,13 @@
 import express from 'express'
 import React from 'react'
 import { renderToString } from 'react-dom/server'
-import { StaticRouter, matchPath, Route } from 'react-router-dom'
+import { StaticRouter, matchPath, Route, Switch } from 'react-router-dom'
 import { Provider } from "react-redux";
 import routes from '../src/App'
 import { getServerStore } from '../src/store/store'
 import Header from "../src/components/Header";
 import proxy from 'http-proxy-middleware'
+import { isContext } from 'vm';
 
 const store = getServerStore();
 const app = new express()
@@ -28,13 +29,22 @@ app.get('*', (req, res) => {
 
   Promise.all(promises.map(p => p.catch(e => null)))
     .then(() => {
+      const context = {}
       const content = renderToString(<Provider store={store}>
-        <StaticRouter location={req.url}>
+        <StaticRouter location={req.url} context={context}>
           <Header></Header>
-          {routes.map(route => <Route {...route}></Route>)}
+          <Switch>
+            {routes.map(route => <Route {...route}></Route>)}
+          </Switch>
         </StaticRouter>
       </Provider>
       )
+
+      if (context.statuscode)
+        res.status(context.statuscode)
+
+      if (context.action == "REPLACE")
+        res.redirect(context.url)
 
       res.send(
         `
